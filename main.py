@@ -1,24 +1,33 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    ChatMemberHandler,
+)
+from telegram.constants import ChatMemberStatus
 import httpx
 import asyncio
 import time
 
-BOT_TOKEN = "8570487817:AAHtul4Nw2tVxPBhbDWMNKfP_1nUM5KJ_q0"
+# ================= BOT CONFIG =================
+BOT_TOKEN = "8570487817:AAGj0Dh_PBA9xvhhLomKXLx9lIzRbDj9I0Y"
+
+OWNER_ID = 6826304542  # 🔴 APNA TELEGRAM USER ID DAALO (@userinfobot)
 
 # 🔗 Channel Links
 CHANNEL_LINK_1 = "https://t.me/+4lV7uE_l89w4NDZl"
 CHANNEL_LINK_2 = "https://t.me/+CAPGfkPG_UQ4Njll"
 CHANNEL_LINK_3 = "https://t.me/goodlikemee"
-# 🔒 Anti Spam
+
+# ⏳ Anti Spam
 cooldown = {}
 COOLDOWN_TIME = 8
 
-# 🧠 UID Memory (First time join show)
+# 🧠 UID Memory
 uid_joined = set()
 
-
-# ---------------- START ----------------
+# ================= START =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Welcome\n\n"
@@ -27,41 +36,34 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "☠️ Developer Anurag Singh"
     )
 
-
-# ---------------- SPAM CHECK ----------------
+# ================= SPAM CHECK =================
 def is_spamming(user_id):
     now = time.time()
-    if user_id in cooldown:
-        if now - cooldown[user_id] < COOLDOWN_TIME:
-            return True
+    if user_id in cooldown and now - cooldown[user_id] < COOLDOWN_TIME:
+        return True
     cooldown[user_id] = now
     return False
 
-
-# ---------------- JOIN BUTTON MESSAGE ----------------
+# ================= JOIN MESSAGE =================
 async def send_join_message(update: Update):
     keyboard = [
         [InlineKeyboardButton("📢 Join Channel 1", url=CHANNEL_LINK_1)],
         [InlineKeyboardButton("📢 Join Channel 2", url=CHANNEL_LINK_2)],
-           [InlineKeyboardButton("📢 Join Channel 3", url=CHANNEL_LINK_3)]
+        [InlineKeyboardButton("📢 Join Channel 3", url=CHANNEL_LINK_3)],
     ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     await update.message.reply_text(
         "🚀 Premium Access Required\n\n"
-        "Join All Channels First.\n"
-        "After Joining, Send Same Command Again.",
-        reply_markup=reply_markup
+        "Join all channels first.\n"
+        "Then send the command again.",
+        reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
-
-# ---------------- LIKE ----------------
+# ================= LIKE =================
 async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if is_spamming(user_id):
-        await update.message.reply_text("⏳ Please wait 30 second And try again.")
+        await update.message.reply_text("⏳ Please wait 8 seconds and try again.")
         return
 
     if not context.args:
@@ -70,49 +72,40 @@ async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     uid = context.args[0]
 
-    # First time UID → show join buttons
     if uid not in uid_joined:
         uid_joined.add(uid)
         await send_join_message(update)
         return
 
-    # Second time → run API
-    msg = await update.message.reply_text(
-        "wait..... 😊\n🤩 By Anurag Singh ...."
-    )
+    msg = await update.message.reply_text("⏳ Processing likes...")
 
-    await asyncio.sleep(2)
-
-    async with httpx.AsyncClient(timeout=20) as client:
-        try:
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
             url = f"https://mukesh-ult-like.vercel.app/like?uid={uid}&region=ind&key=UDIT"
             r = await client.get(url)
             data = r.json()
 
-            text = (
-                f"🥰 Likes Given By API : {data.get('LikesGivenByAPI', 'N/A')}\n"
-                f"🤗 Likes After Command : {data.get('LikesafterCommand', 'N/A')}\n"
-                f"😍 Likes Before Command : {data.get('LikesbeforeCommand', 'N/A')}\n"
-                f"😎 Player Nickname : {data.get('PlayerNickname', 'N/A')}\n"
-                f"☠️ Level : {data.get('Level', 'N/A')}\n"
-                f"💀 Region : {data.get('Region', 'N/A')}\n"
-                f"👽 UID : {data.get('UID', uid)}\n"
-                f"status : {data.get('status', 'N/A')}\n\n"
-                f"☠️ Developer Anurag Singh"
-            )
+        text = (
+            f"🥰 Likes Given : {data.get('LikesGivenByAPI','N/A')}\n"
+            f"🤗 Likes After : {data.get('LikesafterCommand','N/A')}\n"
+            f"😍 Likes Before : {data.get('LikesbeforeCommand','N/A')}\n"
+            f"😎 Nickname : {data.get('PlayerNickname','N/A')}\n"
+            f"☠️ Level : {data.get('Level','N/A')}\n"
+            f"🌍 Region : {data.get('Region','N/A')}\n"
+            f"🆔 UID : {uid}\n\n"
+            f"☠️ Developer Anurag Singh"
+        )
+        await msg.edit_text(text)
 
-            await msg.edit_text(text)
+    except Exception:
+        await msg.edit_text("❌ Like API error")
 
-        except:
-            await msg.edit_text("❌ Like API error")
-
-
-# ---------------- INFO ----------------
+# ================= INFO =================
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if is_spamming(user_id):
-        await update.message.reply_text("⏳ Please wait before using again.")
+        await update.message.reply_text("⏳ Please wait before retry.")
         return
 
     if not context.args:
@@ -121,42 +114,51 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     uid = context.args[0]
 
-    # First time UID → show join buttons
     if uid not in uid_joined:
         uid_joined.add(uid)
         await send_join_message(update)
         return
 
-    msg = await update.message.reply_text(
-        "wait..... 😊\n🤩 By Anurag Singh ...."
-    )
+    msg = await update.message.reply_text("⏳ Fetching info...")
 
-    await asyncio.sleep(2)
-
-    async with httpx.AsyncClient(timeout=20) as client:
-        try:
-            url = f"http://danger-info-alpha.vercel.app/accinfo?uid={uid}&key=DANGERxINFO"
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            url = f"https://danger-info-alpha.vercel.app/accinfo?uid={uid}&key=DANGERxINFO"
             r = await client.get(url)
-
-            if r.status_code != 200:
-                await msg.edit_text("❌ Info API error")
-                return
-
             data = r.json()
 
-            text = "💎 ACCOUNT INFORMATION 💎\n\n"
-            for k, v in data.items():
-                text += f"├─ {k} : {v}\n"
+        text = "💎 ACCOUNT INFO 💎\n\n"
+        for k, v in data.items():
+            text += f"{k} : {v}\n"
 
-            text += "\n☠️ Developer Anurag Singh"
+        text += "\n☠️ Developer Anurag Singh"
+        await msg.edit_text(text)
 
-            await msg.edit_text(text)
+    except Exception:
+        await msg.edit_text("❌ Info API error")
 
-        except:
-            await msg.edit_text("❌ Info API error")
+# ================= BOT PROTECTION =================
+async def protect_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.my_chat_member.chat
+    new_status = update.my_chat_member.new_chat_member.status
+    added_by = update.effective_user
 
+    if new_status in (ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR):
+        if not added_by or added_by.id != OWNER_ID:
+            try:
+                await context.bot.send_message(
+                    chat.id,
+                    "❌ You are not allowed to add this bot.\n\n"
+                    "📩 Contact Admin to add:\n"
+                    "Telegram 👉 @Developer_NovaG\n"
+                    "Instagram 👉 @anuragkumarsinghofficial"
+                )
+            except:
+                pass
 
-# ---------------- MAIN ----------------
+            await context.bot.leave_chat(chat.id)
+
+# ================= MAIN =================
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -164,9 +166,11 @@ def main():
     app.add_handler(CommandHandler("like", like))
     app.add_handler(CommandHandler("info", info))
 
-    print("🤖 Bot Running (Button Join Mode)...")
-    app.run_polling(drop_pending_updates=True)
+    # 🔐 Protection
+    app.add_handler(ChatMemberHandler(protect_bot, ChatMemberHandler.MY_CHAT_MEMBER))
 
+    print("🤖 Bot Running (FULLY PROTECTED)")
+    app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
