@@ -11,7 +11,7 @@ import asyncio
 import time
 
 # ================= BOT CONFIG =================
-BOT_TOKEN = "8570487817:AAGj0Dh_PBA9xvhhLomKXLx9lIzRbDj9I0Y"
+BOT_TOKEN = "8457141988:AAFqXgZwhuIPp6WJ7-dQfSUFqrnzjFEfwJs"
 
 OWNER_ID = 6826304542  # 🔴 APNA TELEGRAM USER ID DAALO (@userinfobot)
 
