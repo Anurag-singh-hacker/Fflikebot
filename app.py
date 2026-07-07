@@ -231,7 +231,7 @@ def handle_requests():
                 ("status", status),
                 ("daily_limit", daily_limit),
                 ("used", used_count),
-                ("remaining", remaining)
+                ("remaining", remaining),
                 ("credit", "Anurag Singh"),
                 ("Telegram", "@Developer_NovaG")
             ])
