@@ -232,6 +232,8 @@ def handle_requests():
                 ("daily_limit", daily_limit),
                 ("used", used_count),
                 ("remaining", remaining)
+                ("credit", "Anurag Singh"),
+                ("Telegram", "@Developer_NovaG")
             ])
 
             return app.response_class(
